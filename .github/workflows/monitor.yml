@@ -1,0 +1,52 @@
+name: Bilibili Monitor
+
+# 定时触发（注意：以下时间为 UTC，北京时间为 +8）
+# "*/30 * * * *" = 每 30 分钟检查一次
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  # 也支持在 GitHub 网页上手动点一下立即运行
+  workflow_dispatch:
+
+# 需要写权限，才能把 state.json 提交回仓库
+permissions:
+  contents: write
+
+# 避免上一次没跑完又启动下一次
+concurrency:
+  group: bili-monitor
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 运行监控
+        env:
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+          # 可选：填入你自己的 B站 Cookie 可降低风控概率；没设置就留空，脚本会自动忽略
+          BILI_COOKIE: ${{ secrets.BILI_COOKIE }}
+        run: python monitor.py
+
+      - name: 保存状态（把 state.json 提交回仓库）
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add state.json
+          if git diff --staged --quiet; then
+            echo "状态无变化，无需提交"
+          else
+            git commit -m "chore: update monitor state [skip ci]"
+            git push
+          fi

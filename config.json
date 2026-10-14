@@ -1,0 +1,11 @@
+{
+  "ups": [
+    { "mid": "3546611678448071", "name": "过河拆桥的米线" }
+  ],
+  "allow_types": [
+    "DYNAMIC_TYPE_AV",
+    "DYNAMIC_TYPE_DRAW",
+    "DYNAMIC_TYPE_WORD",
+    "DYNAMIC_TYPE_ARTICLE"
+  ]
+}
