@@ -56,8 +56,8 @@
    （网页端可直接拖拽上传；会写命令行的用 `git` 更省事。）
 3. **配置 SendKey**：仓库 → `Settings` → `Secrets and variables` → `Actions`
    → `New repository secret`：
-   - Name 填 `SERVERCHAN_SENDKEY`
-   - Secret 填你第 2 步拿到的 SendKey
+   - Name 填 `SERVERCHAN_SENDKEY`，Secret 填你第 2 步拿到的 SendKey
+   - （可选）再加一条 `BILI_COOKIE`，填入你的 B站 Cookie，能提高抓取成功率（见第五节）
 4. **开放写入权限**（用于保存状态）：仓库 → `Settings` → `Actions` → `General`
    → 拉到最下面 `Workflow permissions` → 选 **Read and write permissions** → 保存。
 5. **测试**：仓库 → `Actions` → 左边选 `Bilibili Monitor` → 右侧 `Run workflow`。
@@ -73,7 +73,7 @@
 cd bili-monitor
 pip3 install -r requirements.txt
 export SERVERCHAN_SENDKEY="你的SendKey"   # Windows 用 set，PowerShell 用 $env:
-export BILI_COOKIE="你的B站Cookie"       # 可选，但强烈建议，能大幅降低风控
+export BILI_COOKIE="你的B站Cookie"       # 可选，配置后抓取成功率更高
 python3 monitor.py
 ```
 
@@ -89,8 +89,9 @@ python3 monitor.py
 ## 五、重要说明（请务必看）
 
 ### 关于 B站风控（关键）
-B站对「拉取 UP 主动态」这个接口风控较严。实测（即使在国内网络）：**不做任何处理时，单次请求成功率只有约 15%**，
-会返回 `-352` 错误，或「返回成功但数据为空」这种软风控。
+B站对「拉取 UP 主动态」这个接口风控较严，可能出现几种表现：`-352` 错误、
+「返回成功但数据为空」的软风控，网络环境不佳时（例如服务器位于海外）还可能直接返回 `412`。
+实测在无任何处理时，单次请求成功率约 15%。
 
 脚本已内置应对：
 - 自动获取 `buvid3/buvid4` 凭证；
@@ -99,9 +100,9 @@ B站对「拉取 UP 主动态」这个接口风控较严。实测（即使在国
 
 两种结果的差别：
 - 某轮 12 次都失败时：脚本跳过该 UP，**等下一周期重试，不会漏消息**，只是通知可能晚 30~60 分钟；
-- 想更稳、更及时：建议配置你自己的 B站 Cookie（见下）。
+- 配置你自己的 B站 Cookie（见下）**能明显提高成功率**，网络环境不佳时尤其有效。
 
-### 如何配置 B站 Cookie（可选，但强烈建议）
+### 如何配置 B站 Cookie（可选，配置后成功率更高）
 1. 电脑浏览器登录 B站，按 F12 打开开发者工具 → `Network` → 刷新页面 → 随便点一个 `api.bilibili.com` 的请求
    → `Request Headers` 里找到 `Cookie`，整段复制（重点是 `SESSDATA=...` 那一段）。
 2. **GitHub Actions 用户**：仓库 `Settings` → `Secrets and variables` → `Actions` → `New repository secret`，
@@ -115,7 +116,7 @@ B站对「拉取 UP 主动态」这个接口风控较严。实测（即使在国
 - **定时可能有延迟**：GitHub 的定时任务在高峰期可能延后几分钟到十几分钟，不承诺精确到分钟。
 - **仓库闲置会停**：GitHub 会在仓库连续 60 天无活动后自动暂停定时任务。偶尔手动点一次
   `Run workflow`，或给仓库随便提交点东西即可保持。
-- **隐私**：`SendKey` 只存在 GitHub 的加密 Secret 里，脚本不会外传；仓库建议设为 Private。
+- **隐私**：`SendKey` 与 `BILI_COOKIE` 只存在 GitHub 的加密 Secret 里，脚本不会外传，也不会写进任何文件；仓库建议设为 Private。
 
 ---
 
@@ -125,6 +126,9 @@ B站对「拉取 UP 主动态」这个接口风控较严。实测（即使在国
 1. 先在 Server酱 网页点「发送测试消息」，确认微信通道正常；
 2. 确认仓库 Secret 名严格是 `SERVERCHAN_SENDKEY`；
 3. 确认 Actions 里那次运行是绿色通过（失败会显示红叉，点进去看日志）。
+
+**Q：日志里一直出现 412 / 抓不到数据？**
+多半是 B站 Cookie 过期了（有效期约 1~2 个月）。重新复制一次 Cookie 并更新 `BILI_COOKIE` Secret 即可。
 
 **Q：推送太频繁 / 只想看视频不想看图文？**
 改 `config.json` 的 `allow_types`，只保留 `DYNAMIC_TYPE_AV` 即可只看视频投稿。
