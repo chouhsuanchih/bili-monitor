@@ -131,7 +131,7 @@ def parse_item(it):
     d = {
         "id": it.get("id_str"),
         "type": it.get("type"),
-        "pub_ts": author.get("pub_ts"),
+        "pub_ts": int(author.get("pub_ts") or 0) or None,
         "author": author.get("name") or "",
         "title": "",
         "desc": "",
@@ -246,7 +246,7 @@ def main():
                 tstr = ""
                 if d.get("pub_ts"):
                     tstr = datetime.fromtimestamp(
-                        d["pub_ts"], tz=timezone(timedelta(hours=8))
+                        int(d["pub_ts"]), tz=timezone(timedelta(hours=8))
                     ).strftime("%m-%d %H:%M")
                 lines.append("- 【%s】%s %s\n  %s" % (name, tstr, d.get("title") or "", d.get("url")))
             push_serverchan(sendkey, "B站更新提醒（%d 条）" % len(pending), "\n".join(lines))
